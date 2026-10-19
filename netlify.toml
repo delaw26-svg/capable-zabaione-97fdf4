@@ -1,0 +1,26 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/login"
+  to = "/.netlify/functions/login"
+  status = 200
+
+[[redirects]]
+  from = "/api/state"
+  to = "/.netlify/functions/state"
+  status = 200
+
+[[redirects]]
+  from = "/api/admission"
+  to = "/.netlify/functions/admission"
+  status = 200
+
+[[redirects]]
+  from = "/api/result"
+  to = "/.netlify/functions/result"
+  status = 200
