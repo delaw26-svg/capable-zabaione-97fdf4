@@ -44,7 +44,16 @@ export default async (req) => {
   if (!validToken(req)) return response(401, { error: "Admin sign-in required to change school records." });
   const { key, value } = await req.json().catch(() => ({}));
   if (!KEYS.includes(key) || !Array.isArray(value)) return response(400, { error: "Invalid school record update." });
-  const state = { ...defaults, ...(await load(store)), [key]: value };
+  const current = { ...defaults, ...(await load(store)) };
+  let next = value;
+  if (key === "codes") {
+    // Never let a stale admin browser revive a code that has already been used.
+    const usedById = new Map((current.codes || []).filter(c => c.used).map(c => [c.id, c]));
+    next = value.map(c => usedById.get(c.id) || c);
+    const kept = new Set(next.map(c => c.id));
+    usedById.forEach((c, id) => { if (!kept.has(id)) next.push(c); });
+  }
+  const state = { ...current, [key]: next };
   await store.setJSON("school-state", state);
   return response(200, { ok: true });
 };
