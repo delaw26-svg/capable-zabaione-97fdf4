@@ -22,6 +22,7 @@ Netlify Functions routes:
 - `/api/state`
 - `/api/admission`
 - `/api/result` (checks and consumes one access code)
+- `/api/codes` (admin only: generates or deletes access codes)
 
 ## Storage and limitations
 
