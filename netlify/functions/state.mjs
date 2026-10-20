@@ -1,7 +1,7 @@
 import { getStore } from "@netlify/blobs";
 import crypto from "node:crypto";
 const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
-const KEYS = ["students", "scores", "codes", "news", "published"];
+const KEYS = ["students", "scores", "codes", "news", "published", "subjects"];
 function response(status, body) { return new Response(JSON.stringify(body), { status, headers }); }
 function validToken(req) {
   try {
@@ -16,7 +16,7 @@ function validToken(req) {
     return data.exp > Date.now() && data.sub === "admin";
   } catch { return false; }
 }
-const defaults = { students: [], scores: [], codes: [], news: [], published: [] };
+const defaults = { students: [], scores: [], codes: [], news: [], published: [], subjects: null };
 async function load(store) {
   return await store.get("school-state", { type: "json" }) || defaults;
 }
@@ -37,13 +37,17 @@ export default async (req) => {
       scores: visibleScores,
       codes: [],
       news: state.news || [],
+      subjects: state.subjects || null,
       published
     });
   }
   if (req.method !== "POST") return response(405, { error: "Method not allowed." });
   if (!validToken(req)) return response(401, { error: "Admin sign-in required to change school records." });
   const { key, value } = await req.json().catch(() => ({}));
-  if (!KEYS.includes(key) || !Array.isArray(value)) return response(400, { error: "Invalid school record update." });
+  // "subjects" is an object mapping each school section to its list of subject names.
+  const validSubjects = key === "subjects" && value && typeof value === "object" && !Array.isArray(value)
+    && Object.values(value).every(list => Array.isArray(list) && list.every(x => typeof x === "string"));
+  if (!KEYS.includes(key) || (key === "subjects" ? !validSubjects : !Array.isArray(value))) return response(400, { error: "Invalid school record update." });
   const current = { ...defaults, ...(await load(store)) };
   let next = value;
   if (key === "codes") {
